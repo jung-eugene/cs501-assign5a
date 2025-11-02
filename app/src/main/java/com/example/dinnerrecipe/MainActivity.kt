@@ -35,6 +35,7 @@ data class Recipe(
 )
 
 class RecipeViewModel : ViewModel() {
+    // In-memory store that survives config changes via ViewModel scope
     private val _recipes = mutableStateListOf(
         Recipe(1, "Tomato Pasta", "Pasta\nTomato Sauce\nOlive Oil", "1) Boil pasta\n2) Add sauce\n3) Serve"),
         Recipe(2, "Avocado Toast", "Bread\nAvocado\nSalt\nPepper", "1) Toast bread\n2) Spread avocado\n3) Season")
@@ -42,12 +43,14 @@ class RecipeViewModel : ViewModel() {
     val recipes: List<Recipe> get() = _recipes
     private var nextId = (_recipes.maxOfOrNull { it.id } ?: 0) + 1
 
+    // Adds a recipe, returns its assigned ID (used to navigate to detail/{id})
     fun addRecipe(title: String, ingredients: String, steps: String): Int {
         val id = nextId++
         _recipes.add(Recipe(id, title.trim(), ingredients.trim(), steps.trim()))
         return id
     }
 
+    // Lookup for detail screen by id
     fun getRecipe(id: Int): Recipe? = _recipes.firstOrNull { it.id == id }
 }
 
@@ -58,6 +61,7 @@ sealed class Route(val route: String) {
     object Add : Route("add")
     object Settings : Route("settings")
     object Detail : Route("detail") {
+        // Pattern and helper for routes with an argument
         const val withArg = "detail/{id}"
         fun path(id: Int) = "detail/$id"
     }
@@ -79,6 +83,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun RecipeApp(vm: RecipeViewModel = viewModel()) {
     val nav = rememberNavController()
+    // Track current destination to set the top bar title and nav selection
     val backStackEntry by nav.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: Route.Home.route
 
@@ -93,6 +98,7 @@ fun RecipeApp(vm: RecipeViewModel = viewModel()) {
         topBar = { TopAppBar(title = { Text(title) }) },
         bottomBar = { BottomNavBar(nav) }
     ) { inner ->
+        // Main navigation host (uses route args for detail/{id})
         NavHost(
             navController = nav,
             startDestination = Route.Home.route,
@@ -102,9 +108,8 @@ fun RecipeApp(vm: RecipeViewModel = viewModel()) {
                 HomeScreen(
                     recipes = vm.recipes,
                     onOpen = { id ->
-                        nav.navigate(Route.Detail.path(id)) {
-                            launchSingleTop = true
-                        }
+                        // Avoid duplicating detail on rapid taps
+                        nav.navigate(Route.Detail.path(id)) { launchSingleTop = true }
                     }
                 )
             }
@@ -112,9 +117,9 @@ fun RecipeApp(vm: RecipeViewModel = viewModel()) {
                 AddRecipeScreen(
                     onSave = { t, i, s ->
                         val newId = vm.addRecipe(t, i, s)
+                        // Go straight to detail for the new item, and remove Add from backstack
                         nav.navigate(Route.Detail.path(newId)) {
                             launchSingleTop = true
-                            // remove Add from backstack so Back doesn’t return to it
                             popUpTo(Route.Add.route) { inclusive = true }
                         }
                     },
@@ -125,6 +130,7 @@ fun RecipeApp(vm: RecipeViewModel = viewModel()) {
                 SettingsScreen()
             }
             composable(Route.Detail.withArg) { entry ->
+                // Read id argument from the back stack entry
                 val id = entry.arguments?.getString("id")?.toIntOrNull()
                 val recipe = id?.let(vm::getRecipe)
                 DetailScreen(recipe = recipe, onBack = { nav.popBackStack() })
@@ -149,6 +155,7 @@ fun HomeScreen(recipes: List<Recipe>, onOpen: (Int) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(recipes, key = { it.id }) { r ->
+                // Clickable card opens detail/{id}
                 ElevatedCard(
                     onClick = { onOpen(r.id) },
                     modifier = Modifier.fillMaxWidth()
@@ -160,6 +167,7 @@ fun HomeScreen(recipes: List<Recipe>, onOpen: (Int) -> Unit) {
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(Modifier.height(4.dp))
+                        // Show a quick peek of first ingredient line as a subtitle
                         Text(
                             r.ingredients.lineSequence().firstOrNull() ?: "No ingredients",
                             style = MaterialTheme.typography.bodySmall,
@@ -199,6 +207,7 @@ fun DetailScreen(recipe: Recipe?, onBack: () -> Unit) {
 
 @Composable
 fun AddRecipeScreen(onSave: (String, String, String) -> Unit, onCancel: () -> Unit) {
+    // Local form state; persisted only while this screen is alive
     var title by remember { mutableStateOf("") }
     var ing by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
@@ -211,9 +220,26 @@ fun AddRecipeScreen(onSave: (String, String, String) -> Unit, onCancel: () -> Un
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("Add New Recipe", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Title") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = ing, onValueChange = { ing = it }, label = { Text("Ingredients") }, minLines = 3, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = steps, onValueChange = { steps = it }, label = { Text("Steps") }, minLines = 3, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text("Title") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = ing,
+            onValueChange = { ing = it },
+            label = { Text("Ingredients") },
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = steps,
+            onValueChange = { steps = it },
+            label = { Text("Steps") },
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(enabled = canSave, onClick = { onSave(title, ing, steps) }) { Text("Save") }
             OutlinedButton(onClick = onCancel) { Text("Cancel") }
@@ -223,6 +249,7 @@ fun AddRecipeScreen(onSave: (String, String, String) -> Unit, onCancel: () -> Un
 
 @Composable
 fun SettingsScreen() {
+    // Placeholder—kept to satisfy bottom nav requirement and layout consistency
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Settings (Placeholder)")
     }
@@ -239,8 +266,10 @@ fun BottomNavBar(nav: NavHostController) {
     NavigationBar {
         items.forEach { item ->
             NavigationBarItem(
+                // Highlight the current route’s tab
                 selected = current?.route == item.route,
                 onClick = {
+                    // Prevent duplicate destinations and keep Home as start
                     nav.navigate(item.route) {
                         launchSingleTop = true
                         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
