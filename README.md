@@ -1,4 +1,4 @@
-# CS 501 Individual Assignment 5 Question 1 — What's for Dinner?
+# CS 501 Assignment 5 Question 1 — What's for Dinner?
 
 ## Overview
 **What's for Dinner?** is a 3-screen Android app built with **Jetpack Compose** that allows users to browse, add, and view recipes.  
