@@ -1,8 +1,7 @@
 # CS 501 Assignment 5 Question 1 — What's for Dinner?
 
 ## Overview
-**What's for Dinner?** is a 3-screen Android app built with **Jetpack Compose** that allows users to browse, add, and view recipes.  
-It demonstrates **Compose Navigation with arguments**, **ViewModel state management**, and **Bottom Navigation** integration.
+**What's for Dinner?** is a 3-screen Android app built with **Jetpack Compose** that allows users to browse, add, and view recipes. It demonstrates **Compose Navigation with arguments**, **ViewModel state management**, and **Bottom Navigation** integration.
 
 ## Features
 - **Home Screen:** Displays a list of recipe titles using `LazyColumn`. Tap a recipe to see details.  
@@ -65,6 +64,4 @@ It demonstrates **Compose Navigation with arguments**, **ViewModel state managem
   ```
 
 ### Where AI Misunderstood
-AI initially assumed the project already had `compose.*` and `navigation.*` imports configured.  
-This led to unresolved reference errors when trying to use `NavHost`, `composable`, and `rememberNavController`.  
-After manually adding the correct dependencies and imports, the navigation system worked correctly.
+AI initially assumed the project already had `compose.*` and `navigation.*` imports configured. This led to unresolved reference errors when trying to use `NavHost`, `composable`, and `rememberNavController`. After manually adding the correct dependencies and imports, the navigation system worked correctly.
